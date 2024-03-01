@@ -5,6 +5,7 @@ import (
 	"solver/cube/colors"
 	"solver/cube/faces"
 	"solver/cube/moves"
+	"solver/cube/types"
 )
 
 type Row []byte
@@ -15,7 +16,7 @@ type Cube1 struct {
 	Moves      []moves.Move
 }
 
-func NewCube1() *Cube1 {
+func NewCube1() types.ICube {
 	mp := map[faces.Face][][]colors.Color{}
 	mp[faces.FRONT] = getColorsArrary(colors.GREEN)
 	mp[faces.TOP] = getColorsArrary(colors.WHITE)
@@ -43,8 +44,18 @@ func (c *Cube1) PrettyPrint() {
 	}
 }
 
-func (c *Cube1) Duplicate() *Cube1 {
-	newC := NewCube1()
+func (c *Cube1) GetMoves() []moves.Move {
+	newMoves := make([]moves.Move, len(c.Moves))
+	copy(newMoves, c.Moves)
+	return newMoves
+}
+
+func (c *Cube1) SetTrackMoves(val bool) {
+	c.TrackMoves = val
+}
+
+func (c *Cube1) GetCopy() types.ICube {
+	newC := NewCube1().(*Cube1)
 	for f := faces.FRONT; f <= faces.BOTTOM; f++ {
 		for i := 0; i < 3; i++ {
 			for j := 0; j < 3; j++ {
@@ -56,6 +67,10 @@ func (c *Cube1) Duplicate() *Cube1 {
 	newC.Moves = make([]moves.Move, len(c.Moves))
 	copy(newC.Moves, c.Moves)
 	return newC
+}
+
+func (c *Cube1) ResetMoves() {
+	c.Moves = []moves.Move{}
 }
 
 func (c *Cube1) Encode() string {

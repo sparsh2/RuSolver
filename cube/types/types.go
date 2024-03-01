@@ -9,6 +9,11 @@ type ICube interface {
 	ApplyMoveSequence([]moves.Move)
 	// ApplyMask([]colors.Color)
 	Encode() string
-	// Decode(string) Cube
+	Decode(string)
 	// Reset()
+	SetTrackMoves(bool)
+	PrettyPrint()
+	GetCopy() ICube
+	GetMoves() []moves.Move
+	ResetMoves()
 }

@@ -4,10 +4,11 @@ import (
 	"solver/cube/colors"
 	"solver/cube/cube1"
 	"solver/cube/faces"
+	"solver/cube/types"
 )
 
 type Node struct {
-	C     *cube1.Cube1
+	C     types.ICube
 	Depth int
 }
 

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const readDir = "/Users/ssarode/pers/cubesolver/target/gen.fb"
+const readDir = "../../target/gen.fb"
 
 func TestGen(t *testing.T) {
 	// mapCubeToMoves := map[*cube1.Cube1][]moves.Move{}
@@ -21,11 +21,12 @@ func TestGen(t *testing.T) {
 		t.Errorf("couldn't parse generated file: %v", err)
 	}
 
-	rouxCube := cube1.NewCube1()
+	rouxCube := cube1.NewCube1().(*cube1.Cube1)
 	utils.SetRouxFB(rouxCube)
 
 	for k, v := range mp {
-		c := cube1.NewCube1()
+		// TODO: figure out testing
+		c := cube1.NewCube1().(*cube1.Cube1)
 		c.Decode(k)
 
 		if v == "---O--O---G----R------GG-GG--------W-R-------W--W----G" {

@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"solver/cube"
 	"solver/cube/cube1"
 	"solver/cube/moves"
+	"solver/cube/types"
 	"solver/generate/utils"
 	"sort"
 	"strings"
@@ -19,8 +21,9 @@ const dataDir = "../target/gendata.fb"
 
 func genTrainingSet() {
 	rouxCube := cube1.NewCube1()
-	rouxCube.TrackMoves = true
-	utils.SetRouxFB(rouxCube)
+	rouxCube.SetTrackMoves(true)
+	// utils.SetRouxFB(rouxCube)
+	rouxCube.Decode(cube.RouxMask)
 
 	q := deque.New[utils.Node](65536, 32)
 	mp := map[string][]moves.Move{}
@@ -60,7 +63,7 @@ func genTrainingSet() {
 		// moves.E_INVERTED,
 	}
 
-	maxDep := 4
+	maxDep := 3
 
 	q.PushBack(utils.Node{
 		C:     rouxCube,
@@ -85,15 +88,13 @@ func genTrainingSet() {
 		node := q.PopFront()
 		hash := node.C.Encode()
 		if !canSkip(node.C, mp) {
-			mp[hash] = append(mp[hash], node.C.Moves...)
-			cpyMv := make([]moves.Move, len(node.C.Moves))
-			copy(cpyMv, node.C.Moves)
-			listOfMoves = append(listOfMoves, cpyMv)
+			mp[hash] = append(mp[hash], node.C.GetMoves()...)
+			listOfMoves = append(listOfMoves, node.C.GetMoves())
 			if node.Depth == maxDep {
 				continue
 			}
 			for _, move := range movesList {
-				copyCube := node.C.Duplicate()
+				copyCube := node.C.GetCopy()
 				copyCube.ApplyMove(move)
 
 				q.PushBack(utils.Node{
@@ -155,12 +156,14 @@ func main() {
 	// return
 
 	rouxCube := cube1.NewCube1()
-	rouxCube.TrackMoves = true
-	utils.SetRouxFB(rouxCube)
+	// rouxCube.TrackMoves = true
+	rouxCube.SetTrackMoves(true)
+	// utils.SetRouxFB(rouxCube)
+	rouxCube.Decode(cube.RouxMask)
 
 	q := deque.New[utils.Node](65536, 32)
 	mp := map[string][]moves.Move{}
-	mp[rouxCube.Encode()] = []moves.Move{}
+	// mp[rouxCube.Encode()] = []moves.Move{}
 
 	movesList := []moves.Move{
 		moves.RIGHT,
@@ -198,34 +201,56 @@ func main() {
 
 	maxDep := 6
 
-	for _, move := range movesList {
-		copyCube := rouxCube.Duplicate()
-		copyCube.ApplyMove(move)
+	// for _, move := range movesList {
+	// 	copyCube := rouxCube.GetCopy()
+	// 	copyCube.ApplyMove(move)
 
-		if _, ok := mp[copyCube.Encode()]; !ok {
-			q.PushBack(utils.Node{
-				C:     copyCube,
-				Depth: 1,
-			})
+	// 	if _, ok := mp[copyCube.Encode()]; !ok {
+	// 		q.PushBack(utils.Node{
+	// 			C:     copyCube,
+	// 			Depth: 1,
+	// 		})
+	// 	}
+	// }
+
+	q.PushBack(utils.Node{
+		C:     rouxCube.GetCopy(),
+		Depth: 0,
+	})
+
+	/*
+		while q.size():
+			n = q.pop()
+			if n is not visited:
+				mark visited
+				add neighbors only if depth is not reached
+	*/
+
+	isVisited := func(cube types.ICube) bool {
+		c := cube.GetCopy()
+		for i := 0; i < 4; i++ {
+			if _, ok := mp[c.Encode()]; ok {
+				return true
+			}
+			c.ApplyMove(moves.X)
 		}
+		return false
 	}
 
 	for q.Len() != 0 {
 		node := q.PopFront()
-		hash := node.C.Encode()
-		if _, ok := mp[hash]; !ok {
-			if canSkip(node.C, mp) {
-				continue
-			}
-			mp[hash] = append(mp[hash], node.C.Moves...)
-			if node.Depth == maxDep {
-				continue
-			}
-			for _, move := range movesList {
-				copyCube := node.C.Duplicate()
-				copyCube.ApplyMove(move)
 
-				if _, ok := mp[copyCube.Encode()]; !ok {
+		if !isVisited(node.C) {
+			// Visit
+			hash := node.C.Encode()
+			mp[hash] = append(mp[hash], node.C.GetMoves()...)
+
+			// Add neighbors if max depth is not reached yet
+			if node.Depth < maxDep {
+				for _, move := range movesList {
+					copyCube := node.C.GetCopy()
+					copyCube.ApplyMove(move)
+
 					q.PushBack(utils.Node{
 						C:     copyCube,
 						Depth: node.Depth + 1,
@@ -235,19 +260,50 @@ func main() {
 		}
 	}
 
+	// for q.Len() != 0 {
+	// 	node := q.PopFront()
+	// 	hash := node.C.Encode()
+	// 	if _, ok := mp[hash]; !ok {
+	// 		if canSkip(node.C, mp) {
+	// 			continue
+	// 		}
+	// 		mp[hash] = append(mp[hash], node.C.GetMoves()...)
+	// 		if node.Depth == maxDep {
+	// 			continue
+	// 		}
+	// 		for _, move := range movesList {
+	// 			copyCube := node.C.GetCopy()
+	// 			copyCube.ApplyMove(move)
+
+	// 			if _, ok := mp[copyCube.Encode()]; !ok {
+	// 				q.PushBack(utils.Node{
+	// 					C:     copyCube,
+	// 					Depth: node.Depth + 1,
+	// 				})
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	fmt.Printf("size : %d\n", len(mp))
 
 	save(mp)
 }
 
-func canSkip(cube *cube1.Cube1, mp map[string][]moves.Move) bool {
-	c := cube.Duplicate()
+func canSkip(cube types.ICube, mp map[string][]moves.Move) bool {
+	c := cube.GetCopy()
+	// for i := 0; i < 4; i++ {
+	// 	for j := 0; j < 4; j++ {
+	// 		if _, ok := mp[c.Encode()]; ok {
+	// 			return true
+	// 		}
+	// 		c.ApplyMove(moves.Y)
+	// 	}
+	// 	c.ApplyMove(moves.X)
+	// }
 	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
-			if _, ok := mp[c.Encode()]; ok {
-				return true
-			}
-			c.ApplyMove(moves.Y)
+		if _, ok := mp[c.Encode()]; ok {
+			return true
 		}
 		c.ApplyMove(moves.X)
 	}

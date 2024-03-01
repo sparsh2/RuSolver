@@ -4,23 +4,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"solver/cube"
 	"solver/cube/colors"
 	"solver/cube/cube1"
 	"solver/cube/faces"
 	"solver/cube/moves"
+	"solver/cube/types"
 
 	"github.com/gammazero/deque"
 )
 
 type Node struct {
-	c     *cube1.Cube1
+	c     types.ICube
 	depth int
 }
 
 func main() {
 	rouxCube := cube1.NewCube1()
-	rouxCube.TrackMoves = true
-	setRouxFB(rouxCube)
+	// rouxCube.TrackMoves = true
+	rouxCube.SetTrackMoves(true)
+	// setRouxFB(rouxCube)
+	rouxCube.Decode(cube.RouxMask)
 
 	q := deque.New[Node](65536, 32)
 	mp := map[string][]moves.Move{}
@@ -55,7 +59,7 @@ func main() {
 	maxDep := 5
 
 	for _, move := range movesList {
-		copyCube := rouxCube.Duplicate()
+		copyCube := rouxCube.GetCopy()
 		copyCube.ApplyMove(move)
 
 		if _, ok := mp[copyCube.Encode()]; !ok {
@@ -70,12 +74,12 @@ func main() {
 		node := q.PopFront()
 		hash := node.c.Encode()
 		if _, ok := mp[hash]; !ok {
-			mp[hash] = append(mp[hash], node.c.Moves...)
+			mp[hash] = append(mp[hash], node.c.GetMoves()...)
 			if node.depth == maxDep {
 				continue
 			}
 			for _, move := range movesList {
-				copyCube := node.c.Duplicate()
+				copyCube := node.c.GetCopy()
 				copyCube.ApplyMove(move)
 
 				if _, ok := mp[copyCube.Encode()]; !ok {

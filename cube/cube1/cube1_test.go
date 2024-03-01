@@ -118,7 +118,7 @@ func TestCube1_Encode(t *testing.T) {
 }
 
 func TestCube1_Decode_SolvedCube(t *testing.T) {
-	cube := NewCube1()
+	cube := NewCube1().(*Cube1)
 	solved := cube.Encode()
 
 	cube.Decode(solved)
@@ -133,7 +133,7 @@ func TestCube1_Decode_SolvedCube(t *testing.T) {
 }
 
 func TestCube1_Decode_UnsolvedCube(t *testing.T) {
-	cube := NewCube1()
+	cube := NewCube1().(*Cube1)
 	solved := cube.Encode()
 	fmt.Println(solved)
 	movesToTest := []moves.Move{
@@ -146,7 +146,7 @@ func TestCube1_Decode_UnsolvedCube(t *testing.T) {
 	unsolved := cube.Encode()
 	fmt.Println(unsolved)
 
-	cube1 := NewCube1()
+	cube1 := NewCube1().(*Cube1)
 	cube1.Decode(unsolved)
 	for i := 0; i < 5; i++ {
 		cube1.ApplyMoveSequence(movesToTest)
@@ -159,4 +159,13 @@ func TestCube1_Decode_UnsolvedCube(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestCube1_TrackMoves(t *testing.T) {
+	cube := NewCube1().(*Cube1)
+	cube.SetTrackMoves(true)
+	assert.True(t, cube.TrackMoves)
+	cube.ApplyMove(moves.BACK2)
+	cube.ApplyMove(moves.DOWN)
+	assert.Equal(t, 2, len(cube.GetMoves()))
 }
